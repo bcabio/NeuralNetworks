@@ -10,9 +10,9 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
-
+#include <filesystem>
 using namespace std;
-
+namespace fs = std::filesystem;
 // Silly class to read training data from a text file -- Replace This.
 // Replace class TrainingData with whatever you need to get input data into the
 // program, e.g., connect to a database, or take a stream of data from stdin, or
@@ -118,6 +118,7 @@ public:
     Neuron(unsigned numOutputs, unsigned myIndex);
     void setOutputVal(double val) { m_outputVal = val; }
     double getOutputVal(void) const { return m_outputVal; }
+    vector<Connection> getOutputWeights(void) const { return m_outputWeights; }
     void feedForward(const Layer &prevLayer);
     void calcOutputGradients(double targetVal);
     void calcHiddenGradients(const Layer &nextLayer);
@@ -236,7 +237,7 @@ public:
     void backProp(const vector<double> &targetVals);
     void getResults(vector<double> &resultVals) const;
     double getRecentAverageError(void) const { return m_recentAverageError; }
-
+    void printNeuralNetwork();
 private:
     vector<Layer> m_layers; // m_layers[layerNum][neuronNum]
     double m_error;
@@ -247,6 +248,20 @@ private:
 
 double Net::m_recentAverageSmoothingFactor = 100.0; // Number of training samples to average over
 
+void Net::printNeuralNetwork() 
+{
+    for (unsigned layerNum = 0; layerNum < m_layers.size() - 1; ++layerNum) {
+        // cout<<m_layers[layerNum] << '\n';
+        cout << "LayerNumber: "<< layerNum + 1 << '\n';
+        for (unsigned neuronNum = 0; neuronNum < m_layers[layerNum].size(); ++neuronNum) {
+            cout << '\t' << "Neuron: " << neuronNum + 1 << '\n';
+            for (unsigned weightNum = 0; weightNum < m_layers[layerNum][neuronNum].getOutputWeights().size(); ++weightNum) {
+                cout << '\t' << "Weight: " << m_layers[layerNum][neuronNum].getOutputWeights()[weightNum].weight << '\n';
+            }
+        }
+        cout << '\n';           
+    }
+}
 
 void Net::getResults(vector<double> &resultVals) const
 {
@@ -371,12 +386,14 @@ int main()
 
     while (!trainData.isEof()) {
         ++trainingPass;
-        cout << endl << "Pass " << trainingPass;
 
         // Get new input data and feed it forward:
         if (trainData.getNextInputs(inputVals) != topology[0]) {
             break;
         }
+
+        cout << endl << "Pass " << trainingPass;
+
         showVectorVals(": Inputs:", inputVals);
         myNet.feedForward(inputVals);
 
@@ -396,6 +413,9 @@ int main()
                 << myNet.getRecentAverageError() << endl;
     }
 
+
     cout << endl << "Done" << endl;
+    myNet.printNeuralNetwork();
+
 }
 
